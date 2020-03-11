@@ -35,14 +35,151 @@ initial text={}
 \bigskip
 
 \begin{enumerate}
-  \item Доказать или опровергнуть утверждение: произведение двух минимальных автоматов всегда дает минимальный автомат (рассмотреть случаи для пересечения, объединения и разности языков).
+  \item Доказать или опровергнуть утверждение: произведение двух минимальных автоматов всегда дает минимальный автомат (рассмотреть случаи для пересечения, объединения и разности языков).\\
+  Рассмотрим автоматы:
+  \begin{enumerate}
+  	\item 
+  		\begin{tikzpicture}[->,>=stealth',shorten >=1pt,auto,node distance=3.5cm,
+  		scale = 1,transform shape]
+  		
+  		\node[state,initial] (1) {$1$};
+  		\node[state,accepting] (2) [right of=1] {$2$};
+  		
+  		\path (1) edge [bend left=20]   node {$0$} (2)
+  		(2) edge [bend left=20]  node {$0$} (1);
+  		
+  		\end{tikzpicture}
+  	\item 
+  		\begin{tikzpicture}[->,>=stealth',shorten >=1pt,auto,node distance=3.5cm,
+  		scale = 1,transform shape]
+  		
+  		\node[state,accepting,initial] (1) {$1$};
+  		\node[state] (2) [right of=1] {$2$};
+  		
+  		\path (1) edge  [bend left=20]   node {$0$} (2)
+  		(2) edge  [bend left=20]   node {$0$} (1);
+  		
+  		\end{tikzpicture}
+  	\end{enumerate}
+  	Пересечение:\\
+  	Вообще у нас нет слов которые этому удовлетворяют, значит тут в мин автомате должна быть 1 недопускающая все вершина\\
+  	\begin{tikzpicture}[->,>=stealth',shorten >=1pt,auto,node distance=3.5cm,
+  	scale = 1,transform shape]
+  	
+  	\node[state,initial] (1) {$1.1$};
+  	\node[state] (3) [above of=1] {$2.2$};
+  	\node[state,accepting] (4) [right of=1] {$2.1$};
+  	\node[state] (2) [above of=4] {$1.2$};
+  	
+  	\path (1) edge              node {$0.0$} (3);
+  	
+  	\end{tikzpicture}\\
+  	Объединение:\\
+  	Понятно что не минимальный.\\
+  	\begin{tikzpicture}[->,>=stealth',shorten >=1pt,auto,node distance=3.5cm,
+  	scale = 1,transform shape]
+  	
+  	\node[state,initial,accepting] (1) {$1.1$};
+  	\node[state,accepting] (3) [above of=1] {$2.2$};
+  	\node[state,accepting] (4) [right of=1] {$2.1$};
+  	\node[state] (2) [above of=4] {$1.2$};
+  	
+  	\path (1) edge              node {$0.0$} (3);
+  	
+  	\end{tikzpicture}\\
+  	Разность:\\
+  	Рассмотрим нужное произведение для a и a. В минимальном автомате там 1 вершина, а тут точно не одна.
+  
   \item Для регулярного выражения:
    \[ (a \mid b)^+ (aa \mid bb \mid abab \mid baba)^* (a \mid b)^+\]
   Построить эквивалентные:
   \begin{enumerate}
-    \item Недетерминированный конечный автомат
-    \item Недетерминированный конечный автомат без $\varepsilon$-переходов
-    \item Минимальный полный детерминированный конечный автомат
+    \item Недетерминированный конечный автомат\\\
+    \begin{tikzpicture}[->,>=stealth',shorten >=1pt,auto,node distance=3.5cm,
+    scale = 1,transform shape]
+    
+    \node[state,initial] (1) {$1$};
+    \node[state] (2) [above of=1] {$2$};
+    \node[state] (3) [above left of=2] {$3$};
+    \node[state] (4) [above right of=2] {$4$};
+    \node[state] (5) [above left of=3] {$5$};
+    \node[state] (6) [above of=3] {$6$};
+    \node[state] (7) [above of=4] {$7$};
+    \node[state] (8) [above right of=4] {$8$};
+    \node[state,accepting] (9) [below right of=2] {$9$};
+    \node[state] (10) [above of=6] {$10$};
+    \node[state] (11) [above of=10] {$11$};
+    \node[state] (12) [above of=7] {$12$};
+    \node[state] (13) [above of=12] {$13$};
+    
+    \path (1) edge              node {$a,b$} (2)
+    (1) edge [loop above] node {$a,b$} (1)
+    (2) edge              node {$a,b$} (9)
+    (2) edge              node {$a$} (3)
+    (2) edge              node {$b$} (4)
+    (3) edge              node {$a$} (5)
+    (3) edge              node {$b$} (6)
+    (4) edge              node {$a$} (7)
+    (4) edge              node {$b$} (8)
+    (6) edge              node {$a$} (10)
+    (10) edge              node {$b$} (11)
+    (7) edge              node {$b$} (12)
+    (12) edge              node {$a$} (13)
+    (5) edge  [bend right=45]  node {$eps$} (9)
+    (11) edge              node {$eps$} (9)
+    (8) edge              node {$eps$} (9)
+    (13) edge [bend left=60]  node {$eps$} (9);
+    
+    \end{tikzpicture}
+    \item Недетерминированный конечный автомат без $\varepsilon$-переходов\\
+    \begin{tikzpicture}[->,>=stealth',shorten >=1pt,auto,node distance=3.5cm,
+    scale = 1,transform shape]
+    
+    \node[state,initial] (1) {$1$};
+    \node[state] (2) [above of=1] {$2$};
+    \node[state] (3) [above left of=2] {$3$};
+    \node[state] (4) [above right of=2] {$4$};
+    \node[state] (6) [above of=3] {$6$};
+    \node[state] (7) [above of=4] {$7$};
+    \node[state,accepting] (9) [below right of=2] {$9$};
+    \node[state] (10) [above of=6] {$10$};
+    \node[state] (12) [above of=7] {$12$};
+    
+    \path (1) edge              node {$a,b$} (2)
+    (1) edge [loop above] node {$a,b$} (1)
+    (2) edge              node {$a,b$} (9)
+    (2) edge              node {$a$} (3)
+    (2) edge              node {$b$} (4)
+    (3) edge [bend right=45]  node {$a$} (9)
+    (3) edge              node {$b$} (6)
+    (4) edge              node {$a$} (7)
+    (4) edge              node {$b$} (9)
+    (6) edge              node {$a$} (10)
+    (10) edge              node {$b$} (9)
+    (7) edge              node {$b$} (12)
+    (12) edge [bend left=60] node {$a$} (9);
+    
+    \end{tikzpicture}
+    \item Минимальный полный детерминированный конечный автомат\\
+    \begin{tikzpicture}[->,>=stealth',shorten >=1pt,auto,node distance=3.5cm,
+    scale = 1,transform shape]
+    
+    \node[state,initial] (1) {$1$};
+    \node[state] (2) [above of=1] {$2$};
+    \node[state,accepting] (3) [above of=2] {$3$};
+    \node[state] (4) [above right of=1] {$4$};
+    
+    \path (1) edge              node {$a,b$} (2)
+    (2) edge              node {$a,b$} (3)
+    (3) edge [loop above] node {$a,b$} (3)
+    (1) edge [bend right=60] node {$\Sigma\setminus\{a,b\}$} (4)
+    (2) edge              node {$\Sigma\setminus\{a,b\}$} (4)
+    (4) edge [loop right] node {$\Sigma$} (4)
+    (3) edge [bend left=60]  node {$\Sigma\setminus\{a,b\}$} (4);
+    
+    \end{tikzpicture}
+    Понятно что в строке хотя бы 1 a и b нам нужны, а штуки из середины через них можно выразить
+    
   \end{enumerate}
   \item Построить регулярное выражение, распознающее тот же язык, что и автомат:
   \begin{myauto}
@@ -64,8 +201,26 @@ initial text={}
                     edge              node [above] {$c$}       (q_4)
     ;
   \end{myauto}
-  \item Определить, является ли автоматным язык $\{ \omega \omega^r \mid \omega \in \{ 0, 1 \}^* \}$. Если является --- построить автомат, иначе --- доказать.
-  \item Определить, является ли автоматным язык $\{ u a a v \mid u, v \in \{ a, b \}^* , |u|_b \geq |v|_a \}$. Если является --- построить автомат, иначе --- доказать.
+	(a|b|c)*((a(b|c)*a)|(b(a|c)*b)|(c(a|b)*c))\\
+	Понятно что первая петля это (a|b|c)*\\
+	Потом у нас есть 3 пути, которые соответствуют кускам (a(b|c)*a), (b(a|c)*b), (c(a|b)*c).
+  \item Определить, является ли автоматным язык $\{ \omega \omega^r \mid \omega \in \{ 0, 1 \}^* \}$. Если является --- построить автомат, иначе --- доказать.\\
+  Ответ: нет\\
+  Докажем с помощью леммы о накачке.\\
+  По $n$ возьмем $w=10^n110^n1$ (понятно что оно в языке)\\
+  $\exists x,y,z \in \Sigma ^ * :\ xyz=w,\ |xy| \le n, |y| \ge 1$, такие что
+  $xy ^ k z$ лежит в языке для любых $k$.\\
+  Пусть $x$ пустое. Тогда при $k = 2$ в слове будет 5 единиц а значит оно не лежит в языке.\\
+  Значит $x$ должно быть не пустым. Значит $y = 0^{<n}$. Понятно, что как только $k > 1$ то центр в виде $11$ смещается вправо, а слева новых единичек не появляется, значит число единиц в правой и левой половинах разное, значит слово не в языке.\\
+  Противоречие.
+  \item Определить, является ли автоматным язык $\{ u a a v \mid u, v \in \{ a, b \}^* , |u|_b \geq |v|_a \}$. Если является --- построить автомат, иначе --- доказать.\\
+  Ответ: нет\\
+  Докажем с помощью леммы о накачке.\\
+  По $n$ возьмем $w=b^naa(ba)^n$ (понятно что оно в языке)\\
+  $\exists x,y,z \in \Sigma ^ * :\ xyz=w,\ |xy| \le n, |y| \ge 1$, такие что
+  $xy ^ k z$ лежит в языке для любых $k$.\\
+  Возьмем $k = 0$. До этого у нас было $|u|_b = |v|_a$. Теперь количество $b$ точно уменьшилось, значит слово не лежит в языке.\\
+  Противоречие.
 \end{enumerate}
 
 \newpage
