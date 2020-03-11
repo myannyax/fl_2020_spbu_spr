@@ -7,6 +7,8 @@ import qualified Sum (parseNum, splitOn)
 import Data.List (intercalate)
 import Data.Maybe (fromJust)
 import Control.Applicative ((<|>))
+import Control.Monad
+import Text.Read
 
 -- "1+2*3+4*2" -> 15
 data Operator = Plus 
@@ -23,24 +25,37 @@ data AST = BinOp Operator AST AST
 -- Между числами и знаками операций по одному пробелу
 -- BinOp Plus (Num 13) (Num 42) -> "13 42 +"
 toPostfix :: AST -> String
-toPostfix ast = error "toPostfix not implemented"
+toPostfix (Num a) = show a
+toPostfix (BinOp op a b) = (toPostfix a) ++ " " ++ (toPostfix b) ++ " " ++ show op
 
 -- Парсит выражение в постфиксной записи 
 -- Выражение принимается только целиком (не максимально длинный префикс)
 -- Между числами и знаками операций по одному пробелу
 -- "13 42 +" -> Just (BinOp Plus (Num 13) (Num 42))
 -- "1 2 3 +" -> Nothing
--- "1 2 + *" -> Nothing 
+-- "1 2 + *" -> Nothing
 fromPostfix :: String -> Maybe AST 
-fromPostfix input = error "fromPostfix not implemented"
+fromPostfix input = do
+	[result] <- foldM helper [] (Sum.splitOn ' ' input)
+	return result
+	where helper stack token = case readMaybe token of
+									Just x -> Just $ (Num x):stack
+									Nothing -> do 
+										guard (length stack > 1)
+										let (b:a:st) = stack
+										(op, _) <- parseOp $ token
+										return $ (BinOp op a b):st
+								
 
 -- Парсит левую скобку
 parseLbr :: String -> Maybe ((), String)
-parseLbr = error "parseLbr not implemented"
+parseLbr ('(':xs) = Just ((), xs)
+parseLbr _ = Nothing
 
 -- Парсит правую скобку
 parseRbr :: String -> Maybe ((), String)
-parseRbr = error "parseRbr not implemented"
+parseRbr (')':xs) = Just ((), xs)
+parseRbr _ = Nothing
 
 parseExpr :: String -> Maybe (AST, String)
 parseExpr input = parseSum input
@@ -49,7 +64,11 @@ parseNum :: String -> Maybe (AST, String)
 parseNum input = 
     let (num, rest) = span isDigit input in 
     case num of 
-      [] -> Nothing  
+      [] -> do 
+      	(_, rest) <- parseLbr input
+      	(x, rest') <- parseSum rest
+      	(_, rest'') <- parseRbr rest'
+      	return (x, rest'') 
       xs -> Just (Num $ Sum.parseNum xs, rest)
   
   
