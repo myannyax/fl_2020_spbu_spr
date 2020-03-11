@@ -71,7 +71,8 @@ initial text={}
   	\node[state,accepting] (4) [right of=1] {$2.1$};
   	\node[state] (2) [above of=4] {$1.2$};
   	
-  	\path (1) edge              node {$0.0$} (3);
+  	\path (1) edge [bend left=20]  node {$0.0$} (3)
+  	      (3) edge [bend left=20]  node {$0.0$} (1);
   	
   	\end{tikzpicture}\\
   	Объединение:\\
@@ -84,7 +85,8 @@ initial text={}
   	\node[state,accepting] (4) [right of=1] {$2.1$};
   	\node[state] (2) [above of=4] {$1.2$};
   	
-  	\path (1) edge              node {$0.0$} (3);
+  	\path (1) edge [bend left=20]  node {$0.0$} (3)
+  	(3) edge [bend left=20]  node {$0.0$} (1);
   	
   	\end{tikzpicture}\\
   	Разность:\\
