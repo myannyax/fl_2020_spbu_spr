@@ -36,15 +36,15 @@ instance Monoid error => Alternative (Parser error input) where
   empty = Parser $ \_ -> Failure mempty
 
   (Parser p) <|> (Parser q) = Parser $ \input -> case p input of
-                                Failure _ -> p input
+                                Failure _ -> q input
                                 x -> x 
 
 -- Принимает последовательность элементов, разделенных разделителем
 -- Первый аргумент -- парсер для разделителя
 -- Второй аргумент -- парсер для элемента
 -- В последовательности должен быть хотя бы один элемент
-sepBy1 :: Parser e i sep -> Parser e i a -> Parser e i [a]
-sepBy1 sep elem = error "sepBy1 not implemented"
+sepBy1 :: Monoid e => Parser e i sep -> Parser e i a -> Parser e i [a]
+sepBy1 sep elem = (:) <$> elem <*> (many $ sep *> elem)
 
 -- Проверяет, что первый элемент входной последовательности -- данный символ
 symbol :: Char -> Parser String String Char
@@ -59,8 +59,7 @@ satisfy :: Show a => (a -> Bool) -> Parser String [a] a
 satisfy p = Parser $ \input ->
   case input of
     (x:xs) | p x -> Success xs x
-    []           -> Failure $ "Empty string"
-    (x:xs)       -> Failure $ "Predicate failed"
+    _            -> Failure $ "Predicate failed"
 
 -- Успешно парсит пустую строку
 epsilon :: Parser e i ()
