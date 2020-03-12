@@ -1,8 +1,8 @@
 module Expr where
 
 import           AST         (AST (..), Operator (..))
-import           Combinators (Parser (..), Result (..), bind', elem', fail',
-                              fmap', satisfy, some', success)
+import           Combinators (Parser (..), Result (..), elem', fail',
+                              satisfy, some')
 import           Data.Char   (digitToInt, isDigit)
 
 data Associativity
@@ -26,21 +26,21 @@ parseExpr = error "parseExpr undefined"
 
 -- Парсер для натуральных чисел с 0
 parseNum :: Parser String String Int
-parseNum = foldl (\acc d -> 10 * acc + digitToInt d) 0 `fmap'` go
+parseNum = foldl (\acc d -> 10 * acc + digitToInt d) 0 <$> go
   where
     go :: Parser String String String
     go = some' (satisfy isDigit)
 
 -- Парсер для операторов
 parseOp :: Parser String String Operator
-parseOp = elem' `bind'` toOperator
+parseOp = elem' >>= toOperator
 
 -- Преобразование символов операторов в операторы
 toOperator :: Char -> Parser String String Operator
-toOperator '+' = success Plus
-toOperator '*' = success Mult
-toOperator '-' = success Minus
-toOperator '/' = success Div
+toOperator '+' = return Plus
+toOperator '*' = return Mult
+toOperator '-' = return Minus
+toOperator '/' = return Div
 toOperator _   = fail' "Failed toOperator"
 
 evaluate :: String -> Maybe Int
