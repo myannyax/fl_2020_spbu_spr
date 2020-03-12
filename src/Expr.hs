@@ -2,8 +2,10 @@ module Expr where
 
 import           AST         (AST (..), Operator (..))
 import           Combinators (Parser (..), Result (..), elem', fail',
-                              satisfy, some')
+                              satisfy, some', symbol)
 import           Data.Char   (digitToInt, isDigit)
+import           Control.Monad
+import           Control.Applicative
 
 data Associativity
   = LeftAssoc  -- 1 @ 2 @ 3 @ 4 = (((1 @ 2) @ 3) @ 4)
@@ -16,13 +18,29 @@ uberExpr :: Monoid e
          -> Parser e i ast -- парсер для элементарного выражения
          -> (op -> ast -> ast -> ast) -- функция для создания абстрактного синтаксического дерева для бинарного оператора
          -> Parser e i ast
-uberExpr = error "uberExpr undefined"
+uberExpr operators pE build = foldr f pE operators where
+	f (op, assoc) pE = case assoc of
+		NoAssoc -> do 
+			e <- pE
+			((`build` e) <$> op <*> pE) <|> return e
+		LeftAssoc -> do 
+			e <- pE
+			lst <- many ((,) <$> op <*> pE)
+			return $ foldl (\e1 (op, e2) -> build op e1 e2) e lst
+		RightAssoc -> do 
+			e <- pE
+			lst <- many ((,) <$> op <*> pE)
+			return (snd $ foldr1 (\(op1, e1) (op2, e2) -> (op1, build op2 e1 e2)) ((undefined, e):lst))
+
+toParser c = symbol c >>= toOperator
+operators = [(toParser '+', LeftAssoc), (toParser '-', LeftAssoc), (toParser '*', LeftAssoc), (toParser '/', LeftAssoc), (toParser '^', RightAssoc)]
 
 -- Парсер для выражений над +, -, *, /, ^ (возведение в степень)
 -- с естественными приоритетами и ассоциативностью над натуральными числами с 0.
 -- В строке могут быть скобки
 parseExpr :: Parser String String AST
-parseExpr = error "parseExpr undefined"
+parseExpr = uberExpr operators ((Num <$> parseNum) <|> (symbol '(' *> parseExpr <* symbol ')')) BinOp
+	
 
 -- Парсер для натуральных чисел с 0
 parseNum :: Parser String String Int
