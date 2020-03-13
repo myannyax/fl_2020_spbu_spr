@@ -33,7 +33,7 @@ uberExpr operators pE build = foldr f pE operators where
 			return (snd $ foldr1 (\(op1, e1) (op2, e2) -> (op1, build op2 e1 e2)) ((undefined, e):lst))
 
 toParser c = symbol c >>= toOperator
-operators = [(toParser '+', LeftAssoc), (toParser '-', LeftAssoc), (toParser '*', LeftAssoc), (toParser '/', LeftAssoc), (toParser '^', RightAssoc)]
+operators = [(toParser '+' <|> toParser '-', LeftAssoc), (toParser '*' <|> toParser '/', LeftAssoc), (toParser '^', RightAssoc)]
 
 -- Парсер для выражений над +, -, *, /, ^ (возведение в степень)
 -- с естественными приоритетами и ассоциативностью над натуральными числами с 0.
