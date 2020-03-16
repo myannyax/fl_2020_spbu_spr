@@ -28,9 +28,8 @@ uberExpr operators pE build = foldr f pE operators where
 			lst <- many ((,) <$> op <*> pE)
 			return $ foldl (\e1 (op, e2) -> build op e1 e2) e lst
 		RightAssoc -> do 
-			e <- pE
-			lst <- many ((,) <$> op <*> pE)
-			return (snd $ foldr1 (\(op1, e1) (op2, e2) -> (op1, build op2 e1 e2)) ((undefined, e):lst))
+			(lst, e) <- (,) <$> (many ((,) <$> pE <*> op)) <*> pE
+			return $ foldr (\(b, op) a -> build op b a) e lst
 
 toParser c = symbol c >>= toOperator
 operators = [(toParser '+' <|> toParser '-', LeftAssoc), (toParser '*' <|> toParser '/', LeftAssoc), (toParser '^', RightAssoc)]
@@ -59,6 +58,7 @@ toOperator '+' = return Plus
 toOperator '*' = return Mult
 toOperator '-' = return Minus
 toOperator '/' = return Div
+toOperator '^' = return Pow
 toOperator _   = fail' "Failed toOperator"
 
 evaluate :: String -> Maybe Int
