@@ -5,7 +5,7 @@ import           Combinators         (Parser (..), Result (..), runParser,
                                       symbol)
 import           Control.Applicative ((<|>))
 import           Expr                (Associativity (..), evaluate, parseExpr,
-                                      parseNum, parseOp, toOperator, uberExpr, parseIdent)
+                                      parseNum, parseOp, toOperator, uberExpr, parseIdent, parseStr)
 import           Test.Tasty.HUnit    (Assertion, (@?=), assertBool)
 
 isFailure (Failure _) = True
@@ -43,8 +43,10 @@ unit_parseNegNum = do
     runParser parseNum "123" @?= Success "" 123
     runParser parseNum "-123" @?= Success "" (-123)
     runParser parseNum "--123" @?= Success "" 123
+    runParser parseNum "-0" @?= Success "" 0
     assertBool "" $ isFailure $ runParser parseNum "+-3"
     assertBool "" $ isFailure $ runParser parseNum "-+3"
+    assertBool "" $ isFailure $ runParser parseNum "-"
     assertBool "" $ isFailure $ runParser parseNum "-a"
 
 unit_parseIdent :: Assertion
@@ -73,6 +75,7 @@ unit_parseExpr :: Assertion
 unit_parseExpr = do
     runParser parseExpr "1*2*3"   @?= Success "" (BinOp Mult (BinOp Mult (Num 1) (Num 2)) (Num 3))
     runParser parseExpr "123"     @?= Success "" (Num 123)
+    runParser parseExpr "-1*2"     @?= Success "" (BinOp Mult (Num (-1)) (Num 2))
     runParser parseExpr "abc"     @?= Success "" (Ident "abc")
     runParser parseExpr "1*2+3*4" @?= Success "" (BinOp Plus (BinOp Mult (Num 1) (Num 2)) (BinOp Mult (Num 3) (Num 4)))
     runParser parseExpr "1+2*3+4" @?= Success "" (BinOp Plus (BinOp Plus (Num 1) (BinOp Mult (Num 2) (Num 3))) (Num 4))
@@ -96,10 +99,10 @@ unit_parseExpr = do
     runParser parseExpr "(1==x+2)||3*4<y-5/6&&(7/=z^8)||(id>12)&&abc<=13||xyz>=42" @?=
       runParser parseExpr "(1==(x+2))||(((3*4)<(y-(5/6))&&(7/=(z^8)))||(((id>12)&&(abc<=13))||(xyz>=42)))"
 
-mult  = symbol '*' >>= toOperator
-sum'  = symbol '+' >>= toOperator
-minus = symbol '-' >>= toOperator
-div'  = symbol '/' >>= toOperator
+mult  = parseStr "*" >>= toOperator
+sum'  = parseStr "+" >>= toOperator
+minus = parseStr "-" >>= toOperator
+div'  = parseStr "/" >>= toOperator
 
 expr1 :: Parser String String AST
 expr1 =
