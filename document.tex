@@ -1,0 +1,201 @@
+\documentclass[12pt]{article}
+
+\usepackage{cmap}
+\usepackage[T2A]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[russian]{babel}
+\usepackage{graphicx}
+\usepackage{amsthm,amsmath,amssymb}
+\usepackage[russian,colorlinks=true,urlcolor=red,linkcolor=blue]{hyperref}
+\usepackage{enumerate}
+\usepackage{datetime}
+\usepackage{minted}
+\usepackage{fancyhdr}
+\usepackage{lastpage}
+\usepackage{color}
+\usepackage{verbatim}
+\usepackage{tikz}
+\usepackage{epstopdf}
+\usepackage{xifthen}
+
+\parskip=0em
+\parindent=0em
+
+\sloppy
+\voffset=-20mm
+\textheight=235mm
+\hoffset=-25mm
+\textwidth=180mm
+\headsep=12pt
+\footskip=20pt
+
+\setcounter{page}{0}
+\pagestyle{empty}
+
+% Основные математические символы
+\DeclareSymbolFont{extraup}{U}{zavm}{m}{n}
+\DeclareMathSymbol{\heart}{\mathalpha}{extraup}{86}
+\newcommand{\N}{\mathbb{N}}   % Natural numbers
+\newcommand{\R}{\mathbb{R}}   % Ratio numbers
+\newcommand{\Z}{\mathbb{Z}}   % Integer numbers
+\def\EPS{\varepsilon}         %
+\def\SO{\Rightarrow}          % =>
+\def\EQ{\Leftrightarrow}      % <=>
+\def\t{\texttt}               % mono font
+\def\c#1{{\rm\sc{#1}}}        % font for classes NP, SAT, etc
+\def\O{\mathcal{O}}           %
+\def\NO{\t{\#}}               % #
+\renewcommand{\le}{\leqslant} % <=, beauty
+\renewcommand{\ge}{\geqslant} % >=, beauty
+\def\XOR{\text{ {\raisebox{-2pt}{\ensuremath{\Hat{}}}} }}
+\newcommand{\q}[1]{\langle #1 \rangle}               % <x>
+\newcommand\URL[1]{{\footnotesize{\url{#1}}}}        %
+\newcommand{\sfrac}[2]{{\scriptstyle\frac{#1}{#2}}}  % Очень маленькая дробь
+\newcommand{\mfrac}[2]{{\textstyle\frac{#1}{#2}}}    % Небольшая дробь
+\newcommand{\score}[1]{{\bf\color{red}{(#1)}}}
+
+% Отступы
+\def\makeparindent{\hspace*{\parindent}}
+\def\up{\vspace*{-0.3em}}
+\def\down{\vspace*{0.3em}}
+\def\LINE{\vspace*{-1em}\noindent \underline{\hbox to 1\textwidth{{ } \hfil{ } \hfil{ } }}}
+%\def\up{\vspace*{-\baselineskip}}
+
+\renewcommand{\headrulewidth}{0.4pt}
+
+\lfoot{}
+\cfoot{\thepage\t{/}\pageref*{LastPage}}
+\rfoot{}
+\renewcommand{\footrulewidth}{0.4pt}
+
+\newenvironment{MyList}[1][4pt]{
+  \begin{enumerate}[1.]
+  \setlength{\parskip}{0pt}
+  \setlength{\itemsep}{#1}
+}{       
+  \end{enumerate}
+}
+\newenvironment{InnerMyList}[1][0pt]{
+  \vspace*{-0.5em}
+  \begin{enumerate}[a)]
+  \setlength{\parskip}{#1}
+  \setlength{\itemsep}{0pt}
+}{
+  \end{enumerate}
+}
+
+\newcommand{\Section}[1]{
+  \refstepcounter{section}
+  \addcontentsline{toc}{section}{\arabic{section}. #1} 
+  %{\LARGE \bf \arabic{section}. #1} 
+  {\LARGE \bf #1} 
+  \vspace*{1em}
+  \makeparindent\unskip
+}
+\newcommand{\Subsection}[1]{
+  \refstepcounter{subsection}
+  \addcontentsline{toc}{subsection}{\arabic{section}.\arabic{subsection}. #1} 
+  {\Large \bf \arabic{section}.\arabic{subsection}. #1} 
+  \vspace*{0.5em}
+  \makeparindent\unskip
+}
+
+% Код с правильными отступами
+\newenvironment{code}{
+  \VerbatimEnvironment
+
+  \vspace*{-0.5em}
+  \begin{minted}{c}}{
+  \end{minted}
+  \vspace*{-0.5em}
+
+}
+
+% Формулы с правильными отступами
+\newenvironment{smallformula}{
+ 
+  \vspace*{-0.8em}
+}{
+  \vspace*{-1.2em}
+  
+}
+\newenvironment{formula}{
+ 
+  \vspace*{-0.4em}
+}{
+  \vspace*{-0.6em}
+  
+}
+
+
+\definecolor{dkgreen}{rgb}{0,0.6,0}
+\definecolor{brown}{rgb}{0.5,0.5,0}
+\newcommand{\red}[1]{{\color{red}{#1}}}
+\newcommand{\dkgreen}[1]{{\color{dkgreen}{#1}}}
+
+\begin{document}
+
+\begin{MyList}
+	\item[2.]
+	Избавимся от комбинированных и длинных правил:
+	\begin{MyList}
+		\item $S \to RS \ | \ R$
+		\item $R \to AT_1 \ | \ CT_2 \ | \ AB \ | \ CD \ | \ \varepsilon$
+		\item $T_1 \to SB$
+		\item $T_2 \to RD$
+		\item $A \to a$
+		\item $B \to b$
+		\item $C \to c$
+		\item $D \to d$
+	\end{MyList}
+	
+	Удалим $\varepsilon$-правила.
+	\begin{MyList}
+		\item $S \to RS \ | \ R \ | \ \varepsilon$
+		\item $R \to AT_1 \ | \ CT_2 \ | \ AB \ | \ CD $
+		\item $T_1 \to SB$
+		\item $T_2 \to RD \ | D$
+		\item $A \to a$
+		\item $B \to b$
+		\item $C \to c$
+		\item $D \to d$
+	\end{MyList}
+	
+	Поменяем стартовое состояние:
+	\begin{MyList}
+		\item $S' \to S \ | \ \varepsilon$
+		\item $S \to RS \ | \ R$
+		\item $R \to AT_1 \ | \ CT_2 \ | \ AB \ | \ CD $
+		\item $T_1 \to SB$
+		\item $T_2 \to RD \ | D$
+		\item $A \to a$
+		\item $B \to b$
+		\item $C \to c$
+		\item $D \to d$
+	\end{MyList}
+	
+	Удалим унарные правила:
+	\begin{MyList}
+		\item $S' \to S \ | \ \varepsilon$
+		\item $S \to RS \ | \ AT_1 \ | \ CT_2 \ | \ AB \ | \ CD $
+		\item $R \to AT_1 \ | \ CT_2 \ | \ AB \ | \ CD $
+		\item $T_1 \to SB$
+		\item $T_2 \to RD \ | \ d$
+		\item $A \to a$
+		\item $B \to b$
+		\item $C \to c$
+		\item $D \to d$
+	\end{MyList}
+	
+	\item[3.] Является.
+	
+	Грамматика: $S \to aaS\ |\ Sbb\ |\ aSb\ |\ ab\ |\ aa\ |\ bb$
+	
+	Так как каждый раз мы добавляем по 2 символа, добавляя $a$ только в начало и $b$ только в конец, то в итоге получится что-то из $a^mb^n: (m + n)$ кратно 2\\
+	Теперь осталось показать что для любых $w = a^mb^n:$ таких что $(m + n)$ кратно 2 существует какой-то вывод\\
+	Применим правило $S \to aSb$ $min(m,n)$ раз, если $m = n$ то на последнем шаге вместо  $S \to aSb$ применим $S \to ab$.\\ 
+	Осталось добавить еще $(m - n)$ букв $a$ или $(n - m)$ букв $b$ (если $m \ne n$).\\
+	Т.к $m + n = m + m + (n - m) = n + n + (m - n)$ четное то $m - n$ и $n - m$ тоже четные, а значит правилами $aaS$ или $Sbb$ мы можем добавить сколько надо, но на последнем шаге вместо $aaS$ нужно использовать $aa$, а вместо $Sbb$ $bb$\\
+\end{MyList}
+
+\end{document}
