@@ -5,7 +5,7 @@ import           Combinators         (Parser (..), Result (..), runParser,
                                       symbol)
 import           Control.Applicative ((<|>))
 import           Expr                (Associativity (..), evaluate, parseExpr,
-                                      parseNum, parseOp, toOperator, uberExpr, parseIdent, OpType (..))
+                                      parseNum, parseNegNum, parseOp, toOperator, uberExpr, parseIdent, OpType (..), parseStr)
 import           Test.Tasty.HUnit    (Assertion, (@?=), assertBool)
 
 isFailure (Failure _) = True
@@ -40,12 +40,12 @@ unit_parseNum = do
 
 unit_parseNegNum :: Assertion
 unit_parseNegNum = do
-    runParser parseNum "123" @?= Success "" 123
-    runParser parseNum "-123" @?= Success "" (-123)
-    runParser parseNum "--123" @?= Success "" 123
-    assertBool "" $ isFailure $ runParser parseNum "+-3"
-    assertBool "" $ isFailure $ runParser parseNum "-+3"
-    assertBool "" $ isFailure $ runParser parseNum "-a"
+    runParser parseNegNum "123" @?= Success "" 123
+    runParser parseNegNum "-123" @?= Success "" (-123)
+    runParser parseNegNum "--123" @?= Success "" 123
+    assertBool "" $ isFailure $ runParser parseNegNum "+-3"
+    assertBool "" $ isFailure $ runParser parseNegNum "-+3"
+    assertBool "" $ isFailure $ runParser parseNegNum "-a"
 
 unit_parseIdent :: Assertion
 unit_parseIdent = do
@@ -111,15 +111,15 @@ unit_unaryEpxr = do
     runParser parseExpr "!(-1)" @?= Success "" (UnaryOp Not (UnaryOp Minus (Num 1)))
     runParser parseExpr "-(!1)" @?= Success "" (UnaryOp Minus (UnaryOp Not (Num 1)))
     runParser parseExpr "-1---2" @?= Success "---2" (UnaryOp Minus (Num 1))
-    runParser parseExpr "-1^-2" @?= Success "^-2" (UnaryOp Minus (Num 1))
+    runParser parseExpr "-1^-2" @?= Failure "Predicate failed"
 
     assertBool "" $ isFailure $ runParser parseExpr "--1"
     assertBool "" $ isFailure $ runParser parseExpr "-!1"
 
-mult  = symbol '*' >>= toOperator
-sum'  = symbol '+' >>= toOperator
-minus = symbol '-' >>= toOperator
-div'  = symbol '/' >>= toOperator
+mult  = parseStr "*" >>= toOperator
+sum'  = parseStr "+" >>= toOperator
+minus = parseStr "-" >>= toOperator
+div'  = parseStr "/" >>= toOperator
 
 expr1 :: Parser String String AST
 expr1 =
