@@ -2,6 +2,8 @@ module LLang where
 
 import AST (AST (..), Operator (..))
 import Combinators (Parser (..))
+import Expr (parseExpr, parseStr, parseIdent)
+import Control.Applicative ((<|>), many)
 
 type Expr = AST
 
@@ -32,4 +34,64 @@ stmt =
     ]
 
 parseL :: Parser String String LAst
-parseL = error "parseL undefined"
+parseL = parseAssign <|> parseRead <|> parseWrite <|> parseSeq <|> parseIf <|> parseWhile
+
+parseSeq :: Parser String String LAst
+parseSeq = do
+  parseStr "{"
+  statements <- many parseStatement
+  parseStr "}"
+  return (Seq statements)
+
+parseWrite :: Parser String String LAst
+parseWrite = do
+    parseStr "write("
+    many (parseStr " ")
+    expr <- parseExpr
+    many (parseStr " ")
+    parseStr ")"
+    return (Write expr)
+
+parseRead :: Parser String String LAst
+parseRead = do
+    parseStr "read("
+    many (parseStr " ")
+    x <- parseIdent
+    many (parseStr " ")
+    parseStr ")"
+    return (Read x)
+
+parseAssign :: Parser String String LAst
+parseAssign = do
+  var <- parseIdent
+  many (parseStr " ")
+  parseStr ":="
+  many (parseStr " ")
+  expr <- parseExpr
+  return (Assign var expr)
+
+parseWhile :: Parser String String LAst
+parseWhile = do
+  parseStr "while("
+  expr <- parseExpr
+  parseStr ")"
+  seq <- parseSeq
+  return (While expr seq)
+
+parseIf :: Parser String String LAst
+parseIf = do
+  parseStr "if("
+  expr <- parseExpr
+  parseStr ")"
+  seqTrue <- parseSeq
+  parseStr "else"
+  seqFalse <- parseSeq
+  return (If expr seqTrue seqFalse)
+
+
+parseStatement = do 
+  many (parseStr " " <|> parseStr "\n")
+  st <- parseL
+  parseStr ";"
+  many (parseStr " " <|> parseStr "\n")
+  return st
