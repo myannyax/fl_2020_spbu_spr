@@ -4,10 +4,13 @@ import AST (AST (..), Operator (..))
 import Combinators (Parser (..))
 import Expr (parseExpr, parseStr, parseIdent)
 import Control.Applicative ((<|>), many)
+import Data.Map (Map (..))
 
 type Expr = AST
 
 type Var = String
+
+data Configuration = Conf { subst :: Map Var Int, input :: [Int], output :: [Int] }
 
 data LAst
   = If { cond :: Expr, thn :: LAst, els :: LAst }
@@ -97,3 +100,6 @@ parseStatement = do
   parseStr ";"
   many (parseStr " " <|> parseStr "\n")
   return st
+
+eval :: String -> Configuration -> Configuration
+eval = error "eval not defined"
