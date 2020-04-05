@@ -1,16 +1,21 @@
 module LLang where
 
-import AST (AST (..), Operator (..))
+import AST (AST (..), Operator (..), Subst (..))
 import Combinators (Parser (..))
+<<<<<<< HEAD
 import Expr (parseExpr, parseStr, parseIdent)
 import Control.Applicative ((<|>), many)
 import Data.Map (Map (..))
+=======
+import qualified Data.Map as Map
+>>>>>>> HW07 tests
 
 type Expr = AST
 
 type Var = String
 
-data Configuration = Conf { subst :: Map Var Int, input :: [Int], output :: [Int] }
+data Configuration = Conf { subst :: Subst, input :: [Int], output :: [Int] }
+                   deriving (Show, Eq)
 
 data LAst
   = If { cond :: Expr, thn :: LAst, els :: LAst }
@@ -20,21 +25,6 @@ data LAst
   | Write { expr :: Expr }
   | Seq { statements :: [LAst] }
   deriving (Show, Eq)
-
-stmt :: LAst
-stmt =
-  Seq
-    [ Read "X"
-    , If (BinOp Gt (Ident "X") (Num 13))
-         (Write (Ident "X"))
-         (While (BinOp Lt (Ident "X") (Num 42))
-                (Seq [ Assign "X"
-                        (BinOp Mult (Ident "X") (Num 7))
-                     , Write (Ident "X")
-                     ]
-                )
-         )
-    ]
 
 parseL :: Parser String String LAst
 parseL = parseAssign <|> parseRead <|> parseWrite <|> parseSeq <|> parseIf <|> parseWhile
@@ -101,5 +91,8 @@ parseStatement = do
   many (parseStr " " <|> parseStr "\n")
   return st
 
-eval :: String -> Configuration -> Configuration
+initialConf :: [Int] -> Configuration
+initialConf input = Conf Map.empty input []
+
+eval :: LAst -> Configuration -> Maybe Configuration
 eval = error "eval not defined"
