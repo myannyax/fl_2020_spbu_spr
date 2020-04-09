@@ -44,7 +44,10 @@ unit_parseWrite = do
 
 unit_parseSeq = do
     runParser parseSeq "{write(0);read(x); \n \n \n  \n write(0);}" @?= Success "" (Seq [(Write (Num 0)), (Read "x"), (Write (Num 0))])
+    runParser parseSeq "{\n\n\n \n\n\n write(0);read(x); \n \n \n  \n write(0);\n\n\n\n }" @?= Success "" (Seq [(Write (Num 0)), (Read "x"), (Write (Num 0))])
 
+    runParser parseSeq "{}"  @?= Success "" (Seq [])
+    runParser parseSeq "{ }" @?= Success "" (Seq [])
     assertBool "" $ isFailure $ runParser parseSeq "{write(0);read(x); \n \n \n  \n write(0)}"
     assertBool "" $ isFailure $ runParser parseSeq "\n{write(0);read(x); \n \n \n  \n write(0);}"
 

@@ -39,7 +39,9 @@ parseL = parseAssign <|> parseRead <|> parseWrite <|> parseSeq <|> parseIf <|> p
 parseSeq :: Parser String String LAst
 parseSeq = do
   parseStr "{"
+  many (parseStr " " <|> parseStr "\n")
   statements <- many parseStatement
+  many (parseStr " " <|> parseStr "\n")
   parseStr "}"
   return (Seq statements)
 
