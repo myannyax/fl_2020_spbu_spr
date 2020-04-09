@@ -1,9 +1,10 @@
 module Expr where
 
 import           AST         (AST (..), Operator (..), Subst (..))
-import           Combinators (Parser (..), Result (..), bind', elem', fail',
-                              fmap', satisfy, some', success)
-import           Data.Char   (digitToInt, isDigit)
+import           Combinators (Parser (..), Result (..), elem', fail',
+                              satisfy, some', symbol)
+import           Data.Char   (digitToInt, isLetter, isDigit)
+import           Control.Applicative
 import qualified Data.Map as Map
 
 data Associativity

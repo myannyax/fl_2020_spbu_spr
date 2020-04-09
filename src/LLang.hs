@@ -1,22 +1,13 @@
 module LLang where
 
-<<<<<<< HEAD
-import AST (AST (..), Operator (..), Subst (..))
 import Combinators (Parser (..))
-<<<<<<< HEAD
-import Expr (parseExpr, parseStr, parseIdent)
-import Control.Applicative ((<|>), many)
-import Data.Map (Map (..))
-=======
-import qualified Data.Map as Map
->>>>>>> HW07 tests
-=======
 import           AST         (AST (..), Operator (..), Subst (..))
-import           Combinators (Parser (..))
 import           Data.List   (intercalate)
+import Expr 
+import Data.Map (Map (..))
+import Control.Applicative ((<|>), many)
 import qualified Data.Map    as Map
 import           Text.Printf (printf)
->>>>>>> Nicer Show for LAst
 
 type Expr = AST
 
@@ -102,8 +93,41 @@ parseStatement = do
 initialConf :: [Int] -> Configuration
 initialConf input = Conf Map.empty input []
 
+evalAST :: AST -> Subst -> Maybe Int
+evalAST (Num x) _ = Just x
+evalAST (Ident v) s = Map.lookup v s
+evalAST (UnaryOp op x) s = do 
+  v <- evalAST x s
+  return $ compute (UnaryOp op (Num v))
+evalAST (BinOp op x y) s = do 
+  l <- evalAST x s
+  r <- evalAST y s
+  return $ compute (BinOp op (Num l) (Num r))
+
 eval :: LAst -> Configuration -> Maybe Configuration
-eval = error "eval not defined"
+eval st@(If cond tr fls) config@(Conf subst i o) = do 
+  c <- evalAST cond subst
+  if (c /= 0) then (eval tr config) else (eval fls config)
+
+eval st@(Assign var expr) config@(Conf subst i o) = do 
+  e <- evalAST expr subst
+  return $ Conf (Map.insert var e subst) i o
+
+eval st@(Read var) config@(Conf subst (h:i) o) = return $ Conf (Map.insert var h subst) i o
+eval st@(Read var) config@(Conf subst [] o) = Nothing
+
+eval st@(Write expr) config@(Conf subst i o) = do 
+  e <- evalAST expr subst
+  return $ Conf subst i (e:o)
+
+eval st@(Seq []) config@(Conf subst i o) = Just config
+eval st@(Seq (s:stx)) config@(Conf subst i o) = do 
+  nc <- eval s config
+  eval (Seq stx) nc
+
+eval st@(While cond seq) config@(Conf subst i o) = do 
+  expr <- evalAST cond subst
+  if (expr == 0) then return config else do {nc <- eval seq config; eval st nc}
 
 instance Show LAst where
   show =
