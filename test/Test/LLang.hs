@@ -63,7 +63,7 @@ unit_parseSeq = do
     assertBool "" $ isFailure $ runParser parseSeq "{write(0);;read(x); \n \n \n  \n write(0);}"
     assertBool "" $ isFailure $ runParser parseSeq "write(0);read(x); \n \n \n  \n write(0);"
 
--- f x y = read z ; return (x + z * y)
+-- f x y = read z ; return (x + y)
 -- g x = if (x) then return x else return x*13
 -- {read x; read y; write (f x y); write (g x)}"
 

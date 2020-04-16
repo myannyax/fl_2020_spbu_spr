@@ -16,9 +16,9 @@ type Var = String
 data Configuration = Conf { subst :: Subst, input :: [Int], output :: [Int] }
                    deriving (Show, Eq)
 
-data Program = Program { functions :: [Function], main :: LAst } deriving (Eq)
+data Program = Program { functions :: [Function], main :: LAst }
 
-data Function = Function { name :: String, args :: [Var], funBody :: LAst } deriving (Eq)
+data Function = Function { name :: String, args :: [Var], funBody :: LAst }
 
 data LAst
   = If { cond :: Expr, thn :: LAst, els :: LAst }
@@ -208,6 +208,12 @@ instance Show Function where
 instance Show Program where
   show (Program defs main) =
     printf "%s\n\n%s" (intercalate "\n\n" $ map show defs) (show main)
+
+instance Eq Function where
+  (==) a b = (show a) == (show b)
+
+instance Eq Program where
+  (==) a b = (show a) == (show b)
 
 instance Show LAst where
   show =
