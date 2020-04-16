@@ -1,13 +1,67 @@
 module Test.LLang where
 
 import           AST
-import           Combinators      (Result (..), runParser, toStream)
+import           Combinators      (Parser (..), Result (..), runParser, toStream)
 import qualified Data.Map         as Map
 import           Debug.Trace      (trace)
-import           LLang            (Configuration (..), LAst (..), eval,
-                                   initialConf, parseL, Function (..), Program (..))
+import           LLang
 import           Test.Tasty.HUnit (Assertion, assertBool, (@?=))
 import           Text.Printf      (printf)
+
+isFailure (Failure _) = True
+isFailure  _          = False
+
+
+check :: (Eq r, Show r) => Parser String String r -> String -> r -> Assertion
+check parser prog result = do
+  runParser parser prog @?= Success (toStream "" (length prog)) result
+
+unit_parseIf :: Assertion
+unit_parseIf = do 
+    check parseIf "if(x==0){x:=0;}else{write(0);}" (If {
+       cond = BinOp Equal (Ident "x") (Num 0),
+       thn  = Seq [Assign "x" (Num 0)],
+       els  = Seq [Write (Num 0)]})
+
+    assertBool "" $ isFailure $ runParser parseIf "If(x==0){x:=0;}else{write(0);}"
+    assertBool "" $ isFailure $ runParser parseIf "if(x==0) {x:=0;}else{write(0);}"
+    assertBool "" $ isFailure $ runParser parseIf "if(x==0){x:=0;}{write(0);}"
+
+unit_parseWhile = do 
+    check parseWhile "while(x==0){x:=0;}" (While {
+       cond = BinOp Equal (Ident "x") (Num 0),
+       body  = Seq [Assign "x" (Num 0)]})
+    assertBool "" $ isFailure $ runParser parseWhile "While(x==0){x:=0;}"
+    assertBool "" $ isFailure $ runParser parseWhile "while (x==0){x:=0;}"
+    assertBool "" $ isFailure $ runParser parseWhile "while(x==0)"
+
+unit_parseAssign = do
+    check parseAssign "x:=0" (Assign "x" (Num 0))
+    assertBool "" $ isFailure $ runParser parseAssign "x=0"
+
+unit_parseRead = do
+    check parseRead "read(x)" (Read "x")
+
+    assertBool "" $ isFailure $ runParser parseRead "Read(x)"
+    assertBool "" $ isFailure $ runParser parseRead "read (x)"
+
+unit_parseWrite = do
+    check parseWrite "write(0)" (Write (Num 0))
+
+    assertBool "" $ isFailure $ runParser parseWrite "Write(0)"
+
+unit_parseSeq = do
+    check parseSeq "{write(0);read(x); \n \n \n  \n write(0);}" (Seq [(Write (Num 0)), (Read "x"), (Write (Num 0))])
+    check parseSeq "{\n\n\n \n\n\n write(0);read(x); \n \n \n  \n write(0);\n\n\n\n }" (Seq [(Write (Num 0)), (Read "x"), (Write (Num 0))])
+
+    check parseSeq "{}" (Seq [])
+    check parseSeq "{ }" (Seq [])
+    assertBool "" $ isFailure $ runParser parseSeq "{write(0);read(x); \n \n \n  \n write(0)}"
+    assertBool "" $ isFailure $ runParser parseSeq "\n{write(0);read(x); \n \n \n  \n write(0);}"
+
+    assertBool "" $ isFailure $ runParser parseSeq "{write(0);rread(x); \n \n \n  \n write(0);}"
+    assertBool "" $ isFailure $ runParser parseSeq "{write(0);;read(x); \n \n \n  \n write(0);}"
+    assertBool "" $ isFailure $ runParser parseSeq "write(0);read(x); \n \n \n  \n write(0);"
 
 -- f x y = read z ; return (x + z * y)
 -- g x = if (x) then return x else return x*13
@@ -26,6 +80,10 @@ prog =
         , Write (FunctionCall "g" [Ident "x"])
         ]
     )
+
+unit_parseProg = do
+  check parseDef "__.k.__(){}" $ Function "k" [] (Seq [])
+  -- check parseProg "__.f.__(x, y){read(x); __..return..__(x+z*y);} __.g.__(x){if(x){__..return..__(x);}else{__..return..__(x*13)};}{read(x); read(y); write(__f__(x, y)); write(__g__(x));}" prog
 
 -- read x;
 -- if (x > 13)

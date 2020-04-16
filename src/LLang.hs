@@ -1,8 +1,11 @@
 module LLang where
 
+import Combinators (Parser (..))
 import           AST         (AST (..), Operator (..), Subst (..))
-import           Combinators (Parser (..))
 import           Data.List   (intercalate)
+import Expr 
+import Data.Map (Map (..))
+import Control.Applicative ((<|>), many)
 import qualified Data.Map    as Map
 import           Text.Printf (printf)
 
@@ -13,9 +16,9 @@ type Var = String
 data Configuration = Conf { subst :: Subst, input :: [Int], output :: [Int] }
                    deriving (Show, Eq)
 
-data Program = Program { functions :: [Function], main :: LAst }
+data Program = Program { functions :: [Function], main :: LAst } deriving (Eq)
 
-data Function = Function { name :: String, args :: [Var], funBody :: LAst }
+data Function = Function { name :: String, args :: [Var], funBody :: LAst } deriving (Eq)
 
 data LAst
   = If { cond :: Expr, thn :: LAst, els :: LAst }
@@ -28,19 +31,154 @@ data LAst
   deriving (Eq)
 
 parseL :: Parser String String LAst
-parseL = error "parseL undefined"
+parseL = parseAssign <|> parseRead <|> parseWrite <|> parseSeq <|> parseIf <|> parseWhile
+
+parseSeqFunc = do
+  parseStr "{"
+  many (parseStr " " <|> parseStr "\n")
+  statements <- many parseStatementFunc
+  many (parseStr " " <|> parseStr "\n")
+  parseStr "}"
+  return (Seq statements)
+
+parseStatementFunc = do 
+  many (parseStr " " <|> parseStr "\n")
+  st <- parseL <|> parseReturn
+  parseStr ";"
+  many (parseStr " " <|> parseStr "\n")
+  return st
+
+parseSeq :: Parser String String LAst
+parseSeq = do
+  parseStr "{"
+  many (parseStr " " <|> parseStr "\n")
+  statements <- many parseStatement
+  many (parseStr " " <|> parseStr "\n")
+  parseStr "}"
+  return (Seq statements)
+
+parseWrite :: Parser String String LAst
+parseWrite = do
+    parseStr "write("
+    many (parseStr " ")
+    expr <- parseExpr
+    many (parseStr " ")
+    parseStr ")"
+    return (Write expr)
+
+parseRead :: Parser String String LAst
+parseRead = do
+    parseStr "read("
+    many (parseStr " ")
+    x <- parseIdent
+    many (parseStr " ")
+    parseStr ")"
+    return (Read x)
+
+parseAssign :: Parser String String LAst
+parseAssign = do
+  var <- parseIdent
+  many (parseStr " ")
+  parseStr ":="
+  many (parseStr " ")
+  expr <- parseExpr
+  return (Assign var expr)
+
+parseWhile :: Parser String String LAst
+parseWhile = do
+  parseStr "while("
+  expr <- parseExpr
+  parseStr ")"
+  seq <- parseSeq
+  return (While expr seq)
+
+parseIf :: Parser String String LAst
+parseIf = do
+  parseStr "if("
+  expr <- parseExpr
+  parseStr ")"
+  seqTrue <- parseSeq
+  parseStr "else"
+  seqFalse <- parseSeq
+  return (If expr seqTrue seqFalse)
+
+parseReturn :: Parser String String LAst
+parseReturn = do
+  parseStr "__..return..__("
+  expr <- parseExpr
+  parseStr ")"
+  return (Return expr)
+
+parseStatement = do 
+  many (parseStr " " <|> parseStr "\n")
+  st <- parseL
+  parseStr ";"
+  many (parseStr " " <|> parseStr "\n")
+  return st
+
+parseArgs:: Parser String String [Var]
+parseArgs = ((:) <$> parseIdent <*> many (parseStr ", " *> parseIdent)) <|> (pure [])
+
 
 parseDef :: Parser String String Function
-parseDef = error "parseDef undefined"
+parseDef = do
+  many (parseStr " " <|> parseStr "\n")
+  parseStr "__."
+  name <- parseIdent
+  parseStr ".__("
+  args <- parseArgs
+  parseStr ")"
+  body <- parseSeqFunc
+  many (parseStr " " <|> parseStr "\n")
+  return (Function name args body)
 
-parseProg :: Parser String String Prog
-parseProg = error "parseProg undefined"
+parseProg :: Parser String String Program
+parseProg = do
+  funcs <- many parseDef
+  m <- parseL
+  return $ Program funcs m
 
 initialConf :: [Int] -> Configuration
 initialConf input = Conf Map.empty input []
 
+evalAST :: AST -> Subst -> Maybe Int
+evalAST (Num x) _ = Just x
+evalAST (Ident v) s = Map.lookup v s
+evalAST (UnaryOp op x) s = do 
+  v <- evalAST x s
+  return $ compute (UnaryOp op (Num v))
+evalAST (BinOp op x y) s = do 
+  l <- evalAST x s
+  r <- evalAST y s
+  return $ compute (BinOp op (Num l) (Num r))
+evalAST _ _ = Nothing
+
 eval :: LAst -> Configuration -> Maybe Configuration
-eval = error "eval not defined"
+eval st@(If cond tr fls) config@(Conf subst i o) = do 
+  c <- evalAST cond subst
+  if (c /= 0) then (eval tr config) else (eval fls config)
+
+eval st@(Assign var expr) config@(Conf subst i o) = do 
+  e <- evalAST expr subst
+  return $ Conf (Map.insert var e subst) i o
+
+eval st@(Read var) config@(Conf subst (h:i) o) = return $ Conf (Map.insert var h subst) i o
+eval st@(Read var) config@(Conf subst [] o) = Nothing
+
+eval st@(Write expr) config@(Conf subst i o) = do 
+  e <- evalAST expr subst
+  return $ Conf subst i (e:o)
+
+eval st@(Seq []) config@(Conf subst i o) = Just config
+eval st@(Seq (s:stx)) config@(Conf subst i o) = do 
+  nc <- eval s config
+  eval (Seq stx) nc
+
+eval st@(While cond seq) config@(Conf subst i o) = do 
+  expr <- evalAST cond subst
+  if (expr == 0) then return config else do {nc <- eval seq config; eval st nc}
+
+eval _ _ = Nothing
 
 instance Show Function where
   show (Function name args funBody) =
