@@ -65,9 +65,9 @@ parseArgss = ((:) <$> parseExpr <*> many (parseStr ", " *> parseExpr)) <|> (pure
 
 parseCall :: Parser String String AST
 parseCall = do
-  parseStr "__."
+  parseStr "."
   name <- parseIdent
-  parseStr ".__("
+  parseStr ".("
   xs <- parseArgss
   parseStr ")"
   return $ FunctionCall name xs

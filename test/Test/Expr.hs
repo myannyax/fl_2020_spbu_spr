@@ -101,9 +101,9 @@ unit_parseExpr = do
     runParser parseExpr "-(!1)" @?= Success (toStream "" 5) (UnaryOp Minus (UnaryOp Not (Num 1)))
     runParser parseExpr "-1---2" @?= Success (toStream "---2" 2) (UnaryOp Minus (Num 1))
     testFailure $ runParser parseExpr "-1^-2"
-    runParser parseExpr "__.f.__(1, 2)" @?= Success (toStream "" 13) (FunctionCall "f" [Num 1, Num 2])
-    runParser parseExpr "__.f.__(1)" @?= Success (toStream "" 10) (FunctionCall "f" [Num 1])
-    runParser parseExpr "__.f.__()" @?= Success (toStream "" 9) (FunctionCall "f" [])
+    runParser parseExpr ".f.(1, 2)" @?= Success (toStream "" 9) (FunctionCall "f" [Num 1, Num 2])
+    runParser parseExpr ".f.(1)" @?= Success (toStream "" 6) (FunctionCall "f" [Num 1])
+    runParser parseExpr ".f.()" @?= Success (toStream "" 5) (FunctionCall "f" [])
 
     testFailure $ runParser parseExpr "--1"
     testFailure $ runParser parseExpr "-!1"

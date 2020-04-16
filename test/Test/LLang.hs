@@ -82,8 +82,9 @@ prog =
     )
 
 unit_parseProg = do
-  check parseDef "__.k.__(){}" $ Function "k" [] (Seq [])
-  -- check parseProg "__.f.__(x, y){read(x); __..return..__(x+z*y);} __.g.__(x){if(x){__..return..__(x);}else{__..return..__(x*13)};}{read(x); read(y); write(__f__(x, y)); write(__g__(x));}" prog
+  check parseDef ".k.(){}" $ Function "k" [] (Seq [])
+  check parseDef ".k.(x){read(x); ..return..(x*2);}" $ Function "k" ["x"] (Seq [Read "x", Return (BinOp Mult (Ident "x") (Num 2))])
+  check parseProg ".f.(x, y){read(z); ..return..(x+y);} .g.(x){if(x){..return..(x);}else{..return..(x*13);};}{read(x); read(y); write(.f.(x, y)); write(.g.(x));}" prog
 
 -- read x;
 -- if (x > 13)

@@ -33,6 +33,9 @@ data LAst
 parseL :: Parser String String LAst
 parseL = parseAssign <|> parseRead <|> parseWrite <|> parseSeq <|> parseIf <|> parseWhile
 
+parseLFunc :: Parser String String LAst
+parseLFunc = parseAssign <|> parseRead <|> parseWrite <|> parseSeqFunc <|> parseIfFunc <|> parseWhileFunc <|> parseReturn
+
 parseSeqFunc = do
   parseStr "{"
   many (parseStr " " <|> parseStr "\n")
@@ -41,9 +44,27 @@ parseSeqFunc = do
   parseStr "}"
   return (Seq statements)
 
+parseWhileFunc :: Parser String String LAst
+parseWhileFunc = do
+  parseStr "while("
+  expr <- parseExpr
+  parseStr ")"
+  seq <- parseSeqFunc
+  return (While expr seq)
+
+parseIfFunc :: Parser String String LAst
+parseIfFunc = do
+  parseStr "if("
+  expr <- parseExpr
+  parseStr ")"
+  seqTrue <- parseSeqFunc
+  parseStr "else"
+  seqFalse <- parseSeqFunc
+  return (If expr seqTrue seqFalse)
+
 parseStatementFunc = do 
   many (parseStr " " <|> parseStr "\n")
-  st <- parseL <|> parseReturn
+  st <- parseLFunc
   parseStr ";"
   many (parseStr " " <|> parseStr "\n")
   return st
@@ -104,7 +125,7 @@ parseIf = do
 
 parseReturn :: Parser String String LAst
 parseReturn = do
-  parseStr "__..return..__("
+  parseStr "..return..("
   expr <- parseExpr
   parseStr ")"
   return (Return expr)
@@ -123,9 +144,9 @@ parseArgs = ((:) <$> parseIdent <*> many (parseStr ", " *> parseIdent)) <|> (pur
 parseDef :: Parser String String Function
 parseDef = do
   many (parseStr " " <|> parseStr "\n")
-  parseStr "__."
+  parseStr "."
   name <- parseIdent
-  parseStr ".__("
+  parseStr ".("
   args <- parseArgs
   parseStr ")"
   body <- parseSeqFunc
