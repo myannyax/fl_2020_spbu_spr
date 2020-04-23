@@ -8,9 +8,12 @@ import           Data.List           (nub, sortBy)
 data Result error input result
   = Success (InputStream input) result
   | Failure [ErrorMsg error]
-  deriving (Eq)
 
-type Position = Int
+data Position = Position { line :: Int, col :: Int } deriving (Show, Eq)
+
+instance Ord Position where
+  (Position x y) < (Position x' y') = if x == x' then y < y' else x < x'
+  x <= x' = x < x' || x == x'
 
 newtype Parser error input result
   = Parser { runParser' :: (InputStream input) -> Result error input result }
@@ -19,11 +22,10 @@ data InputStream a = InputStream { stream :: a, curPos :: Position }
                    deriving (Show, Eq)
 
 data ErrorMsg e = ErrorMsg { errors :: [e], pos :: Position }
-                deriving (Eq)
 
 makeError e p = ErrorMsg [e] p
 
-initPosition = 0
+initPosition = Position 0 0
 
 runParser :: Parser error input result -> input -> Result error input result
 runParser parser input = runParser' parser (InputStream input initPosition)
@@ -31,20 +33,32 @@ runParser parser input = runParser' parser (InputStream input initPosition)
 toStream :: a -> Position -> InputStream a
 toStream = InputStream
 
-incrPos :: InputStream a -> InputStream a
-incrPos (InputStream str pos) = InputStream str (pos + 1)
+incrPos :: Position -> Char -> Position
+incrPos (Position line col) '\t' = Position line (col + 4)
+incrPos (Position line col) '\n' = Position (line + 1) 0
+incrPos (Position line col) _ = Position line (col + 1)
 
 instance Functor (Parser error input) where
-  fmap = error "fmap not implemented"
+  fmap f (Parser p) = Parser $ \input ->
+  	case p input of
+    	Success i a -> Success i (f a)
+    	Failure e   -> Failure e
 
 instance Applicative (Parser error input) where
-  pure = error "pure not implemented"
-  (<*>) = error "<*> not implemented"
+  pure x = Parser $ \input -> Success input x
+  (Parser f) <*> (Parser x) = Parser $ \input -> 
+  	case f input of
+  		Failure e -> Failure e
+  		Success i f -> case x i of
+  						Success i' a -> Success i' (f a)
+  						Failure e -> Failure e
 
 instance Monad (Parser error input) where
-  return = error "return not implemented"
-
-  (>>=) = error ">>= not implemented"
+  return = pure
+  (Parser p) >>= f = Parser $ \input ->
+  	case p input of
+    	Success i r -> runParser' (f r) i
+    	Failure e   -> Failure e
 
 instance Monoid error => Alternative (Parser error input) where
   empty = Parser $ \input -> Failure [makeError mempty (curPos input)]
@@ -84,10 +98,10 @@ eof :: Parser String String ()
 eof = Parser $ \input -> if null $ stream input then Success input () else Failure [makeError "Not eof" (curPos input)]
 
 -- Проверяет, что первый элемент входной последовательности удовлетворяет предикату
-satisfy :: (a -> Bool) -> Parser String [a] a
+satisfy :: (Char -> Bool) -> Parser String String Char
 satisfy p = Parser $ \(InputStream input pos) ->
   case input of
-    (x:xs) | p x -> Success (incrPos $ InputStream xs pos) x
+    (x:xs) | p x -> Success (InputStream xs $ incrPos pos x) x
     input        -> Failure [makeError "Predicate failed" pos]
 
 -- Успешно парсит пустую строку
@@ -106,7 +120,7 @@ word :: String -> Parser String String String
 word w = Parser $ \(InputStream input pos) ->
   let (pref, suff) = splitAt (length w) input in
   if pref == w
-  then Success (InputStream suff (pos + length w)) w
+  then Success (InputStream suff (foldl incrPos pos w)) w
   else Failure [makeError ("Expected " ++ show w) pos]
 
 instance Show (ErrorMsg String) where
@@ -115,3 +129,9 @@ instance Show (ErrorMsg String) where
 instance (Show input, Show result) => Show (Result String input result) where
   show (Failure e) = "Parsing failed\n" ++ unlines (map show e)
   show (Success i r) = "Parsing succeeded!\nResult:\n" ++ show r ++ "\nSuffix:\t" ++ show i
+
+instance Eq (ErrorMsg String) where
+  e1 == e2 = (show e1) == (show e2)
+
+instance (Show input, Show result) => Eq (Result String input result) where
+  e1 == e2 = (show e1) == (show e2)
