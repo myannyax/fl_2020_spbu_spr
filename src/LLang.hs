@@ -105,6 +105,17 @@ parseStatement = do
 parseArgs:: Parser String String [Var]
 parseArgs = ((:) <$> parseIdent <*> many (parseStr ", " *> parseIdent)) <|> (pure [])
 
+parseSeqWithReturn :: Parser String String (Expr, LAst)
+parseSeqWithReturn = do
+  parseStr "{"
+  many (parseStr " " <|> parseStr "\n")
+  statements <- many parseStatement
+  many (parseStr " " <|> parseStr "\n")
+  res <- parseReturn
+  many (parseStr " " <|> parseStr "\n")
+  parseStr "}"
+  return (res, Seq statements)
+
 
 parseDef :: Parser String String Function
 parseDef = do
@@ -114,8 +125,7 @@ parseDef = do
   parseStr ".("
   args <- parseArgs
   parseStr ")"
-  body <- parseSeq
-  res <- parseReturn
+  (res, body) <- parseSeqWithReturn
   many (parseStr " " <|> parseStr "\n")
   return (Function name args body res)
 
