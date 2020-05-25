@@ -1,0 +1,2 @@
+eval(St, var(X), U) :- elem(X, St, U).
+eval(St, conj(disj(X,Y),not(var(Z))), true).

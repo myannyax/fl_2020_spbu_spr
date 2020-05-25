@@ -1,0 +1,2 @@
+eval(St, x(X)) :- elem(X, St).nand(x, y).
+?- eval(x).
